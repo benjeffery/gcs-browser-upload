@@ -14,7 +14,7 @@ var _asyncToGenerator2 = require('babel-runtime/helpers/asyncToGenerator');
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 var safePut = exports.safePut = function () {
-  var _ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee() {
+  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
     var res,
         _args = arguments;
     return _regenerator2.default.wrap(function _callee$(_context) {

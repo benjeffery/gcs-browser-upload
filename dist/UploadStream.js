@@ -63,15 +63,16 @@ var UploadStream = function () {
     this.spark = new _sparkMd2.default.ArrayBuffer();
 
     var opts = (0, _extends3.default)({
+      backoffMillis: 1000,
+      backoffRetryLimit: 5,
       chunkSize: MIN_CHUNK_SIZE,
-      storage: args.storage,
       contentType: 'text/plain',
+      debug: false,
+      id: null,
       onChunkUpload: function onChunkUpload() {},
       onProgress: function onProgress() {},
-      id: null,
-      url: null,
-      backoffMillis: 1000,
-      backoffRetryLimit: 5
+      storage: args.storage,
+      url: null
     }, args);
 
     if ((opts.chunkSize % MIN_CHUNK_SIZE !== 0 || opts.chunkSize === 0) && !allowSmallChunks) {
@@ -86,11 +87,13 @@ var UploadStream = function () {
       throw new _errors.MissingOptionsError('The \'url\' option is required');
     }
 
-    (0, _debug2.default)('Creating new upload stream instance:');
-    (0, _debug2.default)(' - Url: ' + opts.url);
-    (0, _debug2.default)(' - Id: ' + opts.id);
-    (0, _debug2.default)(' - File size: Unknown / Streaming');
-    (0, _debug2.default)(' - Chunk size: ' + opts.chunkSize);
+    this.debug = opts.debug ? console.log : _debug2.default;
+
+    this.debug('Creating new upload stream instance:');
+    this.debug(' - Url: ' + opts.url);
+    this.debug(' - Id: ' + opts.id);
+    this.debug(' - File size: Unknown / Streaming');
+    this.debug(' - Chunk size: ' + opts.chunkSize);
 
     this.opts = opts;
     this.meta = new _FileMeta2.default(opts.id, 0, opts.chunkSize, opts.storage);
@@ -99,7 +102,7 @@ var UploadStream = function () {
   (0, _createClass3.default)(UploadStream, [{
     key: 'uploadChunk',
     value: function () {
-      var _ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee2(index, chunk) {
+      var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(index, chunk) {
         var _this = this;
 
         var isLastChunk = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -135,12 +138,12 @@ var UploadStream = function () {
                 };
 
 
-                (0, _debug2.default)('Uploading chunk ' + index + ':');
-                (0, _debug2.default)(' - Chunk length: ' + chunk.byteLength);
-                (0, _debug2.default)(' - Start: ' + start);
-                (0, _debug2.default)(' - End: ' + end);
-                (0, _debug2.default)(' - Headers: ' + JSON.stringify(headers));
-                (0, _debug2.default)(' - isLastChunk: ' + isLastChunk);
+                this.debug('Uploading chunk ' + index + ':');
+                this.debug(' - Chunk length: ' + chunk.byteLength);
+                this.debug(' - Start: ' + start);
+                this.debug(' - End: ' + end);
+                this.debug(' - Headers: ' + JSON.stringify(headers));
+                this.debug(' - isLastChunk: ' + isLastChunk);
 
                 // if (backoff >= opts.backoffRetryLimit) {
                 //   throw new UploadUnableToRecoverError()
@@ -149,7 +152,7 @@ var UploadStream = function () {
                 _context2.prev = 17;
                 _context2.next = 20;
                 return (0, _asyncRetry2.default)(function () {
-                  var _ref2 = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee(bail, num) {
+                  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(bail, num) {
                     var res;
                     return _regenerator2.default.wrap(function _callee$(_context) {
                       while (1) {
@@ -207,7 +210,7 @@ var UploadStream = function () {
 
               case 26:
 
-                (0, _debug2.default)('Chunk upload succeeded, adding checksum ' + checksum);
+                this.debug('Chunk upload succeeded, adding checksum ' + checksum);
                 meta.addChecksum(index, checksum);
 
                 opts.onChunkUpload({
@@ -234,7 +237,7 @@ var UploadStream = function () {
   }, {
     key: 'getRemoteResumeIndex',
     value: function () {
-      var _ref3 = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee3() {
+      var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3() {
         var opts, headers, res, header, range, bytesReceived;
         return _regenerator2.default.wrap(function _callee3$(_context3) {
           while (1) {
@@ -246,7 +249,7 @@ var UploadStream = function () {
                   'Content-Type': opts.contentType
                 };
 
-                (0, _debug2.default)('Retrieving upload status from GCS');
+                this.debug('Retrieving upload status from GCS');
                 _context3.next = 5;
                 return (0, _http.safePut)(opts.url, null, { headers: headers });
 
@@ -254,12 +257,12 @@ var UploadStream = function () {
                 res = _context3.sent;
 
 
-                (0, _debug2.default)(res);
+                this.debug(res);
 
                 checkResponseStatus(res, opts, [308]);
                 header = res.headers['range'];
 
-                (0, _debug2.default)('Received upload status from GCS: ' + header);
+                this.debug('Received upload status from GCS: ' + header);
                 range = header.match(/(\d+?)-(\d+?)$/);
                 bytesReceived = parseInt(range[2]) + 1;
                 return _context3.abrupt('return', Math.floor(bytesReceived / opts.chunkSize));
@@ -281,13 +284,13 @@ var UploadStream = function () {
   }, {
     key: 'pause',
     value: function pause() {
-      (0, _debug2.default)('Upload Stream paused');
+      this.debug('Upload Stream paused');
       this.paused = true;
     }
   }, {
     key: 'unpause',
     value: function unpause() {
-      (0, _debug2.default)('Upload Stream unpaused');
+      this.debug('Upload Stream unpaused');
       this.paused = false;
       this.unpauseHandlers.forEach(function (fn) {
         return fn();
@@ -307,7 +310,7 @@ var UploadStream = function () {
     key: 'cancel',
     value: function cancel() {
       this.meta.reset();
-      (0, _debug2.default)('Upload cancelled');
+      this.debug('Upload cancelled');
     }
   }]);
   return UploadStream;
