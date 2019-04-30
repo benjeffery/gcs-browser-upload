@@ -1,6 +1,7 @@
 import { safePut } from './http'
 import FileMeta from './FileMeta'
 import FileProcessor from './FileProcessor'
+import {getData} from './FileProcessor'
 import debug from './debug'
 import {
   DifferentChunkError,
@@ -90,7 +91,8 @@ export default class Upload {
       await processor.run(uploadChunk, resumeIndex)
     }
 
-    const uploadChunk = async (checksum, index, chunk) => {
+    const uploadChunk = async (checksum, index, section) => {
+      let chunk = await getData(section);
       const chunkSize = chunk.byteLength || chunk.size;
       const total = opts.file.size
       const start = index * opts.chunkSize

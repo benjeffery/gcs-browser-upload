@@ -97,7 +97,7 @@ exports.default = FileMeta;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getData = undefined;
+exports.getData = exports.getChecksum = undefined;
 
 var _regenerator = _dereq_('babel-runtime/regenerator');
 
@@ -115,13 +115,50 @@ var _createClass2 = _dereq_('babel-runtime/helpers/createClass');
 
 var _createClass3 = _interopRequireDefault(_createClass2);
 
-var getData = exports.getData = function () {
-  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(blob) {
+var getChecksum = exports.getChecksum = function () {
+  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(spark, section) {
+    var chunk, endsBuffer, state, checksum;
     return _regenerator2.default.wrap(function _callee3$(_context3) {
       while (1) {
         switch (_context3.prev = _context3.next) {
           case 0:
-            return _context3.abrupt('return', new _es6Promise.Promise(function (resolve, reject) {
+            _context3.next = 2;
+            return getData(section);
+
+          case 2:
+            chunk = _context3.sent;
+
+            // just grab the ends of the chunk for comparison.  Was running into major performance issues with big wav files
+            endsBuffer = mergeArrayBuffers(chunk.slice(0, 20), chunk.slice(chunk.byteLength - 20, chunk.byteLength));
+
+            spark.append(endsBuffer);
+            // spark.append(chunk)
+            state = spark.getState();
+            checksum = spark.end();
+
+            spark.setState(state);
+            return _context3.abrupt('return', checksum);
+
+          case 9:
+          case 'end':
+            return _context3.stop();
+        }
+      }
+    }, _callee3, this);
+  }));
+
+  return function getChecksum(_x4, _x5) {
+    return _ref3.apply(this, arguments);
+  };
+}();
+
+var getData = exports.getData = function () {
+  var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(blob) {
+    return _regenerator2.default.wrap(function _callee4$(_context4) {
+      while (1) {
+        switch (_context4.prev = _context4.next) {
+          case 0:
+            return _context4.abrupt('return', new _es6Promise.Promise(function (resolve, reject) {
               var reader = new self.FileReader();
               reader.onload = function () {
                 return resolve(reader.result.buffer ? reader.result.buffer : reader.result);
@@ -132,18 +169,17 @@ var getData = exports.getData = function () {
 
           case 1:
           case 'end':
-            return _context3.stop();
+            return _context4.stop();
         }
       }
-    }, _callee3, this);
+    }, _callee4, this);
   }));
 
-  return function getData(_x4) {
-    return _ref3.apply(this, arguments);
+  return function getData(_x6) {
+    return _ref4.apply(this, arguments);
   };
 }();
 
-exports.getChecksum = getChecksum;
 exports.mergeArrayBuffers = mergeArrayBuffers;
 
 var _es6Promise = _dereq_('es6-promise');
@@ -191,7 +227,7 @@ var FileProcessor = function () {
 
                 processIndex = function () {
                   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(index) {
-                    var start, section, chunk, checksum, shouldContinue;
+                    var start, section, checksum, shouldContinue;
                     return _regenerator2.default.wrap(function _callee$(_context) {
                       while (1) {
                         switch (_context.prev = _context.next) {
@@ -216,38 +252,27 @@ var FileProcessor = function () {
                           case 6:
                             start = index * chunkSize;
                             section = file.slice(start, start + chunkSize);
-                            chunk = section;
                             checksum = void 0;
 
-                            if (!_this.calculateChecksum) {
-                              _context.next = 15;
-                              break;
+                            if (_this.calculateChecksum) {
+                              checksum = getChecksum(spark, section);
                             }
 
-                            _context.next = 13;
-                            return getData(section);
+                            _context.next = 12;
+                            return fn(checksum, index, section);
 
-                          case 13:
-                            chunk = _context.sent;
-
-                            checksum = getChecksum(spark, chunk);
-
-                          case 15:
-                            _context.next = 17;
-                            return fn(checksum, index, chunk);
-
-                          case 17:
+                          case 12:
                             shouldContinue = _context.sent;
 
                             if (!(shouldContinue !== false)) {
-                              _context.next = 21;
+                              _context.next = 16;
                               break;
                             }
 
-                            _context.next = 21;
+                            _context.next = 16;
                             return processIndex(index + 1);
 
-                          case 21:
+                          case 16:
                           case 'end':
                             return _context.stop();
                         }
@@ -300,17 +325,6 @@ var FileProcessor = function () {
   }]);
   return FileProcessor;
 }();
-
-function getChecksum(spark, chunk) {
-  // just grab the ends of the chunk for comparison.  Was running into major performance issues with big wav files
-  var endsBuffer = mergeArrayBuffers(chunk.slice(0, 20), chunk.slice(chunk.byteLength - 20, chunk.byteLength));
-  spark.append(endsBuffer);
-  // spark.append(chunk)
-  var state = spark.getState();
-  var checksum = spark.end();
-  spark.setState(state);
-  return checksum;
-}
 
 function mergeArrayBuffers(a, b) {
   var tmp = new Uint8Array(a.byteLength + b.byteLength);
@@ -485,12 +499,17 @@ var Upload = function () {
                 }();
 
                 uploadChunk = function () {
-                  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(checksum, index, chunk) {
-                    var chunkSize, total, start, end, headers, res;
+                  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(checksum, index, section) {
+                    var chunk, chunkSize, total, start, end, headers, res;
                     return _regenerator2.default.wrap(function _callee2$(_context2) {
                       while (1) {
                         switch (_context2.prev = _context2.next) {
                           case 0:
+                            _context2.next = 2;
+                            return (0, _FileProcessor.getData)(section);
+
+                          case 2:
+                            chunk = _context2.sent;
                             chunkSize = chunk.byteLength || chunk.size;
                             total = opts.file.size;
                             start = index * opts.chunkSize;
@@ -510,7 +529,7 @@ var Upload = function () {
                             if (typeof self.Blob !== 'undefined') {
                               chunk = new Blob([chunk]);
                             }
-                            _context2.next = 12;
+                            _context2.next = 15;
                             return (0, _http.safePut)(opts.url, chunk, {
                               headers: headers, onUploadProgress: function onUploadProgress(progressEvent) {
                                 opts.onProgress({
@@ -522,7 +541,7 @@ var Upload = function () {
                               }
                             });
 
-                          case 12:
+                          case 15:
                             res = _context2.sent;
 
 
@@ -538,7 +557,7 @@ var Upload = function () {
                               isLastChunk: total === end + 1
                             });
 
-                          case 17:
+                          case 20:
                           case 'end':
                             return _context2.stop();
                         }

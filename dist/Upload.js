@@ -162,12 +162,17 @@ var Upload = function () {
                 }();
 
                 uploadChunk = function () {
-                  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(checksum, index, chunk) {
-                    var chunkSize, total, start, end, headers, res;
+                  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(checksum, index, section) {
+                    var chunk, chunkSize, total, start, end, headers, res;
                     return _regenerator2.default.wrap(function _callee2$(_context2) {
                       while (1) {
                         switch (_context2.prev = _context2.next) {
                           case 0:
+                            _context2.next = 2;
+                            return (0, _FileProcessor.getData)(section);
+
+                          case 2:
+                            chunk = _context2.sent;
                             chunkSize = chunk.byteLength || chunk.size;
                             total = opts.file.size;
                             start = index * opts.chunkSize;
@@ -187,7 +192,7 @@ var Upload = function () {
                             if (typeof self.Blob !== 'undefined') {
                               chunk = new Blob([chunk]);
                             }
-                            _context2.next = 12;
+                            _context2.next = 15;
                             return (0, _http.safePut)(opts.url, chunk, {
                               headers: headers, onUploadProgress: function onUploadProgress(progressEvent) {
                                 opts.onProgress({
@@ -199,7 +204,7 @@ var Upload = function () {
                               }
                             });
 
-                          case 12:
+                          case 15:
                             res = _context2.sent;
 
 
@@ -215,7 +220,7 @@ var Upload = function () {
                               isLastChunk: total === end + 1
                             });
 
-                          case 17:
+                          case 20:
                           case 'end':
                             return _context2.stop();
                         }

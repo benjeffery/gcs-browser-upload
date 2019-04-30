@@ -32,14 +32,12 @@ class FileProcessor {
 
       const start = index * chunkSize
       const section = file.slice(start, start + chunkSize)
-      let chunk = section;
       let checksum;
       if (this.calculateChecksum) {
-        chunk = await getData(section)
-        checksum = getChecksum(spark, chunk)
+        checksum = getChecksum(spark, section)
       }
 
-      const shouldContinue = await fn(checksum, index, chunk)
+      const shouldContinue = await fn(checksum, index, section)
       if (shouldContinue !== false) {
         await processIndex(index + 1)
       }
@@ -65,7 +63,8 @@ class FileProcessor {
   }
 }
 
-export function getChecksum (spark, chunk) {
+export async function getChecksum (spark, section) {
+  let chunk = await getData(section);
   // just grab the ends of the chunk for comparison.  Was running into major performance issues with big wav files
   var endsBuffer = mergeArrayBuffers(chunk.slice(0, 20), chunk.slice(chunk.byteLength - 20, chunk.byteLength))
   spark.append(endsBuffer)
