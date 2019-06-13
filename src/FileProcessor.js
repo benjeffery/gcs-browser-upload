@@ -34,7 +34,7 @@ class FileProcessor {
       const section = file.slice(start, start + chunkSize)
       let checksum;
       if (this.calculateChecksum) {
-        checksum = getChecksum(spark, section)
+        checksum = await getChecksum(spark, section)
       }
 
       const shouldContinue = await fn(checksum, index, section)

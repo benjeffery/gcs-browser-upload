@@ -160,25 +160,33 @@ var FileProcessor = function () {
                             section = file.slice(start, start + chunkSize);
                             checksum = void 0;
 
-                            if (_this.calculateChecksum) {
-                              checksum = getChecksum(spark, section);
-                            }
-
-                            _context.next = 12;
-                            return fn(checksum, index, section);
-
-                          case 12:
-                            shouldContinue = _context.sent;
-
-                            if (!(shouldContinue !== false)) {
-                              _context.next = 16;
+                            if (!_this.calculateChecksum) {
+                              _context.next = 13;
                               break;
                             }
 
-                            _context.next = 16;
+                            _context.next = 12;
+                            return getChecksum(spark, section);
+
+                          case 12:
+                            checksum = _context.sent;
+
+                          case 13:
+                            _context.next = 15;
+                            return fn(checksum, index, section);
+
+                          case 15:
+                            shouldContinue = _context.sent;
+
+                            if (!(shouldContinue !== false)) {
+                              _context.next = 19;
+                              break;
+                            }
+
+                            _context.next = 19;
                             return processIndex(index + 1);
 
-                          case 16:
+                          case 19:
                           case 'end':
                             return _context.stop();
                         }
